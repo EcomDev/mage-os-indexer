@@ -1,0 +1,20 @@
+{
+    "name": "mage-os/module-indexer",
+    "description": "Api implementation",
+    "type": "magento2-module",
+    "require": {
+        "magento/framework": "*",
+        "magento/module-indexer": "*"
+    },
+    "license": [
+        "MIT"
+    ],
+    "autoload": {
+        "files": [
+            "registration.php"
+        ],
+        "psr-4": {
+            "MageOS\\Indexer\\": ""
+        }
+    }
+}
