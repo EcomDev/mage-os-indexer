@@ -11,36 +11,35 @@ namespace MageOS\Indexer\Model\ResourceModel;
 use Magento\Framework\App\ResourceConnection;
 use Magento\Framework\DB\Sql\Expression;
 
-class RangeGenerator
+readonly class TableIndexerRangeGenerator implements IndexerRangeGenerator
 {
     public function __construct(
-        private readonly ResourceConnection $resourceConnection,
-        private readonly string $connectionName
+        private ResourceConnection $resourceConnection,
+        private string             $connectionName,
+        private string             $tableName,
+        private string             $primaryKey,
     ) {
 
     }
 
-    public function createRanges(
-        string $entityTable,
-        string $entityIdField, int $batchSize): iterable
+    public function ranges(int $batchSize): iterable
     {
         $connection = $this->resourceConnection->getConnection($this->connectionName);
-        $entityIdField = $connection->quoteIdentifier($entityIdField);
+        $primaryKey = $connection->quoteIdentifier($this->primaryKey);
 
         $select = $connection->select()
             ->from(
-                $entityTable,
+                $this->tableName,
                 [
-                    'min' => sprintf('MIN(%s)', $entityIdField),
-                    'max' => sprintf('MAX(%s)', $entityIdField)
+                    'min' => sprintf('MIN(%s)', $primaryKey),
+                    'max' => sprintf('MAX(%s)', $primaryKey)
                 ]
             )
             ->group(
                 new Expression(sprintf(
-                    'CEIL(%s / %d)', $entityIdField, $batchSize
+                    'CEIL(%s / %d)', $primaryKey, $batchSize
                 ))
             );
-
 
         foreach ($select->query() as $row) {
             yield (int)$row['min'] => (int)$row['max'];

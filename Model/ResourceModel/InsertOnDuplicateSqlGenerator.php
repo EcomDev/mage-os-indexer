@@ -8,6 +8,11 @@ declare(strict_types=1);
 
 namespace MageOS\Indexer\Model\ResourceModel;
 
+/**
+ * Generates SQL for INSERT ... ON DUPLICATE prepared statements
+ *
+ * @api
+ */
 class InsertOnDuplicateSqlGenerator
 {
     public function generate(string $tableName, array $columns, int $rowCount, $onUpdate = []): string

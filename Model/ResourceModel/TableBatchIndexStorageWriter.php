@@ -36,22 +36,8 @@ class TableBatchIndexStorageWriter implements IndexStorageWriter
         $this->indexTableStructure->prepareRow($this->parametersByTable[$tableName], $row);
 
         if ($this->currentBatchByTable[$tableName] === $this->batchSize) {
-            if (!$this->batchInsertStatementRegistry->hasStatement($tableName, $this->batchSize)) {
-                $this->batchInsertStatementRegistry->createStatement(
-                    $tableName,
-                    $this->batchSize,
-                    $this->indexTableStructure->generateInsertOnDuplicate($this->batchSize)
-                );
-            }
-
-            $this->batchInsertStatementRegistry->executeStatement(
-                $tableName,
-                $this->currentBatchByTable[$tableName],
-                $this->parametersByTable[$tableName]
-            );
-
-            $this->currentBatchByTable[$tableName] = 0;
-            $this->parametersByTable[$tableName] = [];
+            $batchSize = $this->currentBatchByTable[$tableName];
+            $this->executeBatch($tableName, $batchSize);
         }
     }
 
@@ -62,19 +48,27 @@ class TableBatchIndexStorageWriter implements IndexStorageWriter
                 continue;
             }
 
-            if (!$this->batchInsertStatementRegistry->hasStatement($tableName, $batchSize)) {
-                $this->batchInsertStatementRegistry->createStatement(
-                    $tableName,
-                    $batchSize,
-                    $this->indexTableStructure->generateInsertOnDuplicate($batchSize)
-                );
-            }
+            $this->executeBatch($tableName, $batchSize);
+        }
+    }
 
-            $this->batchInsertStatementRegistry
-                ->executeStatement($tableName, $batchSize, $this->parametersByTable[$tableName]);
+    private function executeBatch(string $tableName, mixed $batchSize): void
+    {
+        if (!$this->batchInsertStatementRegistry->hasStatement($tableName, $batchSize)) {
+            $this->batchInsertStatementRegistry->createStatement(
+                $tableName,
+                $batchSize,
+                $this->indexTableStructure->generateInsertOnDuplicate($batchSize)
+            );
         }
 
-        $this->currentBatchByTable = [];
-        $this->parametersByTable = [];
+        $this->batchInsertStatementRegistry->executeStatement(
+            $tableName,
+            $batchSize,
+            $this->parametersByTable[$tableName]
+        );
+
+        $this->currentBatchByTable[$tableName] = 0;
+        $this->parametersByTable[$tableName] = [];
     }
 }
