@@ -10,15 +10,17 @@ namespace MageOS\Indexer\Model\ResourceModel;
 
 use Magento\Framework\App\ResourceConnection;
 use Magento\Framework\DB\Sql\Expression;
+use MageOS\Indexer\Model\IndexRangeGenerator;
 
-readonly class TableIndexerRangeGenerator implements IndexerRangeGenerator
+readonly class TableIndexRangeGenerator implements IndexRangeGenerator
 {
     public function __construct(
         private ResourceConnection $resourceConnection,
         private string             $connectionName,
         private string             $tableName,
         private string             $primaryKey,
-    ) {
+    )
+    {
 
     }
 

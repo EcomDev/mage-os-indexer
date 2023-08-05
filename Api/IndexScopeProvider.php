@@ -8,6 +8,11 @@ declare(strict_types=1);
 
 namespace MageOS\Indexer\Api;
 
+/**
+ * Provider of independent scope for indexer
+ *
+ *
+ */
 interface IndexScopeProvider
 {
     /**

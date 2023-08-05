@@ -8,24 +8,17 @@ declare(strict_types=1);
 
 namespace MageOS\Indexer\Model;
 
-use MageOS\Indexer\Api\IndexRecordMutableData;
-
+use MageOS\Indexer\Api\IndexRecordMutable;
 use Traversable;
 
-class ArrayIndexRecordData implements \IteratorAggregate, IndexRecordMutableData
+class ArrayIndexRecord implements IndexRecordMutable
 {
     public function __construct(
         private array $data = [],
         private array $scopeData = []
-    ) {
-
-    }
-
-    public function getIterator(): Traversable
+    )
     {
-        foreach ($this->data as $entityId => $item) {
-            yield $entityId;
-        }
+
     }
 
     public function reset(): void
@@ -34,22 +27,22 @@ class ArrayIndexRecordData implements \IteratorAggregate, IndexRecordMutableData
         $this->scopeData = [];
     }
 
-    public function setValue(int $entityId, array $data): void
+    public function set(int $entityId, array $data): void
     {
         $this->data[$entityId] = $data;
     }
 
-    public function addValue(int $entityId, string $field, mixed $value): void
+    public function add(int $entityId, string $field, mixed $value): void
     {
         $this->data[$entityId][$field] = $value;
     }
 
-    public function extendValue(int $entityId, string $field, string $key, mixed $value): void
+    public function append(int $entityId, string $field, string $key, mixed $value): void
     {
         $this->data[$entityId][$field][$key] = $value;
     }
 
-    public function addScopeValue(int $entityId, int $storeId, string $field, mixed $value): void
+    public function addInScope(int $entityId, int $storeId, string $field, mixed $value): void
     {
         if (!isset($this->data[$entityId])) {
             return;
@@ -58,15 +51,22 @@ class ArrayIndexRecordData implements \IteratorAggregate, IndexRecordMutableData
         $this->scopeData[$entityId][$storeId][$field] = $value;
     }
 
-    public function getScopeValue(int $entityId, int $scopeId, string $field): mixed
+    public function getInScope(int $entityId, int $scopeId, string $field): mixed
     {
         return $this->scopeData[$entityId][$scopeId][$field]
             ?? $this->scopeData[$entityId][0][$field]
             ?? null;
     }
 
-    public function getValue(int $entityId, string $field): mixed
+    public function get(int $entityId, string $field): mixed
     {
         return $this->data[$entityId][$field] ?? null;
+    }
+
+    public function listEntityIds(): iterable
+    {
+        foreach ($this->data as $entityId => $item) {
+            yield $entityId;
+        }
     }
 }

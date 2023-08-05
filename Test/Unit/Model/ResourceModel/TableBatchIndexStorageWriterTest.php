@@ -8,19 +8,22 @@ declare(strict_types=1);
 
 namespace MageOS\Indexer\Test\Unit\Model\ResourceModel;
 
+use MageOS\Indexer\Api\IndexScope;
 use MageOS\Indexer\Api\IndexStorageMap;
 use MageOS\Indexer\Model\ResourceModel\TableBatchIndexStorageWriter;
+use MageOS\Indexer\Test\FakeBatchStatementRegistry;
+use MageOS\Indexer\Test\FakeIndexTableStructure;
 use PHPUnit\Framework\TestCase;
 
 class TableBatchIndexStorageWriterTest extends TestCase
     implements IndexStorageMap
 {
-    private FakeBatchInsertStatementRegistry $statementRegistry;
+    private FakeBatchStatementRegistry $statementRegistry;
     private TableBatchIndexStorageWriter $batchIndexStorageWriter;
 
     protected function setUp(): void
     {
-        $this->statementRegistry = FakeBatchInsertStatementRegistry::create();
+        $this->statementRegistry = FakeBatchStatementRegistry::create();
         $this->batchIndexStorageWriter = new TableBatchIndexStorageWriter(
             $this,
             $this->statementRegistry,
@@ -35,7 +38,7 @@ class TableBatchIndexStorageWriterTest extends TestCase
         $this->batchIndexStorageWriter->finish();
 
         $this->assertEquals(
-            FakeBatchInsertStatementRegistry::create(),
+            FakeBatchStatementRegistry::create(),
             $this->statementRegistry
         );
     }
@@ -55,9 +58,9 @@ class TableBatchIndexStorageWriterTest extends TestCase
         $this->batchIndexStorageWriter->add(['entity_id' => 10, 'store_id' => 2, 'visibility' => 1]);
 
         $this->assertEquals(
-            FakeBatchInsertStatementRegistry::create()
-                ->withStatement('storage_2', 5, 'BATCH SQL 5')
-                ->withExecuted('storage_2', 5,
+            FakeBatchStatementRegistry::create()
+                ->withInsertStatement('storage_2', 5, 'BATCH INSERT SQL storage_2 5')
+                ->withInsertExecuted('storage_2', 5,
                     [
                         1, 2, 3,
                         2, 2, 4,
@@ -66,7 +69,7 @@ class TableBatchIndexStorageWriterTest extends TestCase
                         5, 2, 1
                     ]
                 )
-                ->withExecuted('storage_2', 5,
+                ->withInsertExecuted('storage_2', 5,
                     [
                         6, 2, 3,
                         7, 2, 4,
@@ -89,7 +92,7 @@ class TableBatchIndexStorageWriterTest extends TestCase
         $this->batchIndexStorageWriter->add(['entity_id' => 5, 'store_id' => 2, 'visibility' => 2]);
 
         $this->assertEquals(
-            FakeBatchInsertStatementRegistry::create(),
+            FakeBatchStatementRegistry::create(),
             $this->statementRegistry
         );
     }
@@ -110,10 +113,10 @@ class TableBatchIndexStorageWriterTest extends TestCase
         $this->batchIndexStorageWriter->add(['entity_id' => 5, 'store_id' => 2, 'visibility' => 1]);
 
         $this->assertEquals(
-            FakeBatchInsertStatementRegistry::create()
-                ->withStatement('storage_1', 5, 'BATCH SQL 5')
-                ->withStatement('storage_2', 5, 'BATCH SQL 5')
-                ->withExecuted('storage_1', 5,
+            FakeBatchStatementRegistry::create()
+                ->withInsertStatement('storage_1', 5, 'BATCH INSERT SQL storage_1 5')
+                ->withInsertStatement('storage_2', 5, 'BATCH INSERT SQL storage_2 5')
+                ->withInsertExecuted('storage_1', 5,
                     [
                         1, 1, 3,
                         2, 1, 4,
@@ -122,7 +125,7 @@ class TableBatchIndexStorageWriterTest extends TestCase
                         5, 1, 1
                     ]
                 )
-                ->withExecuted('storage_2', 5,
+                ->withInsertExecuted('storage_2', 5,
                     [
                         1, 2, 3,
                         2, 2, 4,
@@ -148,19 +151,24 @@ class TableBatchIndexStorageWriterTest extends TestCase
         $this->batchIndexStorageWriter->finish();
 
         $this->assertEquals(
-            FakeBatchInsertStatementRegistry::create()
-                ->withStatement('storage_1', 2, 'BATCH SQL 2')
-                ->withStatement('storage_2', 2, 'BATCH SQL 2')
-                ->withStatement('storage_3', 1, 'BATCH SQL 1')
-                ->withExecuted('storage_1', 2, [2, 1, 3, 3, 1, 4])
-                ->withExecuted('storage_2', 2, [4, 2, 4, 5, 2, 4])
-                ->withExecuted('storage_3', 1, [5, 3, 2]),
+            FakeBatchStatementRegistry::create()
+                ->withInsertStatement('storage_1', 2, 'BATCH INSERT SQL storage_1 2')
+                ->withInsertStatement('storage_2', 2, 'BATCH INSERT SQL storage_2 2')
+                ->withInsertStatement('storage_3', 1, 'BATCH INSERT SQL storage_3 1')
+                ->withInsertExecuted('storage_1', 2, [2, 1, 3, 3, 1, 4])
+                ->withInsertExecuted('storage_2', 2, [4, 2, 4, 5, 2, 4])
+                ->withInsertExecuted('storage_3', 1, [5, 3, 2]),
             $this->statementRegistry
         );
     }
 
-    public function getStorageName(array $row): string
+    public function getStorageByRow(array $row): string
     {
         return 'storage_' . $row['store_id'];
+    }
+
+    public function getStorageListByScope(IndexScope $scope): iterable
+    {
+        // TODO: Implement getStorageListByScope() method.
     }
 }

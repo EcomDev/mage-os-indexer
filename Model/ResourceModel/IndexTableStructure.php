@@ -10,7 +10,7 @@ namespace MageOS\Indexer\Model\ResourceModel;
 
 interface IndexTableStructure
 {
-    public function generateInsertOnDuplicate(int $batchSize): string;
+    public function generateInsertOnDuplicate(string $tableName, int $batchSize): string;
 
     public function prepareRow(array &$batchParameters, array $row): void;
 }

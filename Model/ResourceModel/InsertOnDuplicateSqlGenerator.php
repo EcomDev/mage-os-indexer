@@ -24,7 +24,7 @@ class InsertOnDuplicateSqlGenerator
                 ' ON DUPLICATE KEY UPDATE %s',
                 implode(
                     ',',
-                    array_map(fn ($column) => "`$column` = VALUES(`$column`)", $onUpdate)
+                    array_map(fn($column) => "`$column` = VALUES(`$column`)", $onUpdate)
                 )
             );
         }
@@ -38,7 +38,7 @@ class InsertOnDuplicateSqlGenerator
         $sql = sprintf(
             'INSERT INTO `%s` (%s) VALUES %s%s',
             $tableName,
-            implode(',', array_map(fn ($column) => "`$column`", $columns)),
+            implode(',', array_map(fn($column) => "`$column`", $columns)),
             rtrim(
                 $rowLines,
                 ','

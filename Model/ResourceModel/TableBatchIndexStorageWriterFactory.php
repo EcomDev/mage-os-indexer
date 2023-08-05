@@ -21,7 +21,8 @@ readonly class TableBatchIndexStorageWriterFactory
         IndexStorageMap     $indexStorageMap,
         IndexTableStructure $indexTableStructure,
         int                 $batchSize
-    ): TableBatchIndexStorageWriter {
+    ): TableBatchIndexStorageWriter
+    {
         return $this->objectManager->create(
             TableBatchIndexStorageWriter::class,
             [

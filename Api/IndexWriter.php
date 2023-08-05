@@ -8,11 +8,12 @@ declare(strict_types=1);
 
 namespace MageOS\Indexer\Api;
 
-interface IndexGenerator
+/**
+ * Writer for index generator
+ *
+ * Should store generated index rows into items
+ */
+interface IndexWriter
 {
-    public function process(
-        IndexScope  $scope,
-        IndexRecord $record,
-        IndexWriter $writer
-    );
+    public function add($row): void;
 }

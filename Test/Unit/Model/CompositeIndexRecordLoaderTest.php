@@ -8,23 +8,23 @@ declare(strict_types=1);
 
 namespace MageOS\Indexer\Test\Unit\Model;
 
-use MageOS\Indexer\Api\IndexRecordDataLoader;
-use MageOS\Indexer\Api\IndexRecordMutableData;
+use MageOS\Indexer\Api\IndexRecordLoader;
+use MageOS\Indexer\Api\IndexRecordMutable;
 use MageOS\Indexer\Api\IndexScope;
-use MageOS\Indexer\Model\ArrayIndexRecordData;
-use MageOS\Indexer\Model\CompositeIndexRecordDataLoader;
+use MageOS\Indexer\Model\ArrayIndexRecord;
+use MageOS\Indexer\Model\CompositeIndexRecordLoader;
 use PHPUnit\Framework\TestCase;
 
-class CompositeIndexRecordDataLoaderTest extends TestCase
-    implements IndexRecordDataLoader
+class CompositeIndexRecordLoaderTest extends TestCase
+    implements IndexRecordLoader
 {
     private int $timesCalled = 0;
 
-    private CompositeIndexRecordDataLoader $recordLoader;
+    private CompositeIndexRecordLoader $recordLoader;
 
     protected function setUp(): void
     {
-        $this->recordLoader = new CompositeIndexRecordDataLoader([
+        $this->recordLoader = new CompositeIndexRecordLoader([
             $this,
             $this,
             $this
@@ -34,7 +34,7 @@ class CompositeIndexRecordDataLoaderTest extends TestCase
     /** @test */
     public function invokesLoadByRangeOnAllChildLoaders()
     {
-        $arrayRecordData = new ArrayIndexRecordData();
+        $arrayRecordData = new ArrayIndexRecord();
         $this->recordLoader->loadByRange(
             IndexScope::create([]),
             $arrayRecordData,
@@ -43,7 +43,7 @@ class CompositeIndexRecordDataLoaderTest extends TestCase
         );
 
         $this->assertEquals(
-            new ArrayIndexRecordData(
+            new ArrayIndexRecord(
                 [
                     1 => ['loadByRange' => true],
                     2 => ['loadByRange' => true],
@@ -57,7 +57,7 @@ class CompositeIndexRecordDataLoaderTest extends TestCase
     /** @test */
     public function invokesLoadByIdsOnAllChildLoaders()
     {
-        $arrayRecordData = new ArrayIndexRecordData();
+        $arrayRecordData = new ArrayIndexRecord();
         $this->recordLoader->loadByIds(
             IndexScope::create([]),
             $arrayRecordData,
@@ -65,7 +65,7 @@ class CompositeIndexRecordDataLoaderTest extends TestCase
         );
 
         $this->assertEquals(
-            new ArrayIndexRecordData(
+            new ArrayIndexRecord(
                 [
                     1 => ['loadByIds' => true],
                     2 => ['loadByIds' => true],
@@ -76,13 +76,13 @@ class CompositeIndexRecordDataLoaderTest extends TestCase
         );
     }
 
-    public function loadByRange(IndexScope $indexScope, IndexRecordMutableData $data, int $minEntityId, int $maxEntityId): void
+    public function loadByRange(IndexScope $indexScope, IndexRecordMutable $data, int $minEntityId, int $maxEntityId): void
     {
-        $data->setValue(++$this->timesCalled, ['loadByRange' => true]);
+        $data->set(++$this->timesCalled, ['loadByRange' => true]);
     }
 
-    public function loadByIds(IndexScope $indexScope, IndexRecordMutableData $data, array $entityIds): void
+    public function loadByIds(IndexScope $indexScope, IndexRecordMutable $data, array $entityIds): void
     {
-        $data->setValue(++$this->timesCalled, ['loadByIds' => true]);
+        $data->set(++$this->timesCalled, ['loadByIds' => true]);
     }
 }

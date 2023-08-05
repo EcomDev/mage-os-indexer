@@ -3,7 +3,7 @@
         xsi:noNamespaceSchemaLocation="urn:magento:framework:Module/etc/module.xsd">
     <module name="MageOS_Indexer">
         <sequence>
-            <module name="Magento_Indexer" />
+            <module name="Magento_Indexer"/>
         </sequence>
     </module>
 </config>

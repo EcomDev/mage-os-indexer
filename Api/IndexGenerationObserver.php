@@ -11,5 +11,6 @@ namespace MageOS\Indexer\Api;
 interface IndexGenerationObserver
 {
     public function beforeGeneration(IndexScope $scope);
+
     public function afterGeneration(IndexScope $scope);
 }

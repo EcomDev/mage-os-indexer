@@ -8,20 +8,27 @@ declare(strict_types=1);
 
 namespace MageOS\Indexer\Test\Unit\Model;
 
-use MageOS\Indexer\Api\IndexAction;
+use MageOS\Indexer\Api\IndexGenerator;
+use MageOS\Indexer\Api\IndexRecord;
+use MageOS\Indexer\Api\IndexRecordLoader;
+use MageOS\Indexer\Api\IndexRecordMutable;
+use MageOS\Indexer\Api\IndexWriter;
+use MageOS\Indexer\Model\ArrayIndexRecordFactory;
 use MageOS\Indexer\Api\IndexGenerationObserver;
 use MageOS\Indexer\Api\IndexScope;
 use MageOS\Indexer\Api\IndexScopeProvider;
 use MageOS\Indexer\Api\IndexStorageWriter;
 use MageOS\Indexer\Api\IndexStorageWriterFactory;
 use MageOS\Indexer\Model\Indexer;
+use MageOS\Indexer\Model\MinMaxIndexRangeGenerator;
 use PHPUnit\Framework\TestCase;
 
 class IndexerTest extends TestCase
     implements IndexScopeProvider,
-        IndexAction,
-        IndexGenerationObserver,
-        IndexStorageWriterFactory
+    IndexRecordLoader,
+    IndexGenerationObserver,
+    IndexGenerator,
+    IndexStorageWriterFactory
 {
     private Indexer $indexer;
 
@@ -40,6 +47,10 @@ class IndexerTest extends TestCase
             $this,
             $this,
             $this,
+            new MinMaxIndexRangeGenerator(1, 7),
+            $this,
+            new ArrayIndexRecordFactory(),
+            3,
             3
         );
 
@@ -54,8 +65,22 @@ class IndexerTest extends TestCase
 
         $this->assertSame(
             [
-                ['full', $this->scopes['one']],
-                ['full', $this->scopes['two']]
+                ['full', $this->scopes['one'], 1],
+                ['full', $this->scopes['one'], 2],
+                ['full', $this->scopes['one'], 3],
+                ['full', $this->scopes['one'], 4],
+                ['full', $this->scopes['one'], 5],
+                ['full', $this->scopes['one'], 6],
+                ['full', $this->scopes['one'], 7],
+                ['finish_full'],
+                ['full', $this->scopes['two'], 1],
+                ['full', $this->scopes['two'], 2],
+                ['full', $this->scopes['two'], 3],
+                ['full', $this->scopes['two'], 4],
+                ['full', $this->scopes['two'], 5],
+                ['full', $this->scopes['two'], 6],
+                ['full', $this->scopes['two'], 7],
+                ['finish_full'],
             ],
             $this->actions
         );
@@ -84,8 +109,12 @@ class IndexerTest extends TestCase
 
         $this->assertEquals(
             [
-                ['partial', $this->scopes['one'], [1]],
-                ['partial', $this->scopes['two'], [1]]
+                ['clear', [1]],
+                ['partial', $this->scopes['one'], 1],
+                ['finish_partial'],
+                ['clear', [1]],
+                ['partial', $this->scopes['two'], 1],
+                ['finish_partial'],
             ],
             $this->actions
         );
@@ -114,8 +143,14 @@ class IndexerTest extends TestCase
 
         $this->assertSame(
             [
-                ['partial', $this->scopes['one'], [1, 2]],
-                ['partial', $this->scopes['two'], [1, 2]]
+                ['clear', [1, 2]],
+                ['partial', $this->scopes['one'], 1],
+                ['partial', $this->scopes['one'], 2],
+                ['finish_partial'],
+                ['clear', [1, 2]],
+                ['partial', $this->scopes['two'], 1],
+                ['partial', $this->scopes['two'], 2],
+                ['finish_partial'],
             ],
             $this->actions
         );
@@ -144,8 +179,14 @@ class IndexerTest extends TestCase
 
         $this->assertSame(
             [
-                ['partial', $this->scopes['one'], [3, 4]],
-                ['partial', $this->scopes['two'], [3, 4]]
+                ['clear', [3, 4]],
+                ['partial', $this->scopes['one'], 3],
+                ['partial', $this->scopes['one'], 4],
+                ['finish_partial'],
+                ['clear', [3, 4]],
+                ['partial', $this->scopes['two'], 3],
+                ['partial', $this->scopes['two'], 4],
+                ['finish_partial'],
             ],
             $this->actions
         );
@@ -176,12 +217,28 @@ class IndexerTest extends TestCase
 
         $this->assertSame(
             [
-                ['partial', $this->scopes['one'], [3, 4]],
-                ['partial', $this->scopes['two'], [3, 4]],
-                ['partial', $this->scopes['one'], [1, 2]],
-                ['partial', $this->scopes['two'], [1, 2]],
-                ['partial', $this->scopes['one'], [1]],
-                ['partial', $this->scopes['two'], [1]]
+                ['clear', [3, 4]],
+                ['partial', $this->scopes['one'], 3],
+                ['partial', $this->scopes['one'], 4],
+                ['finish_partial'],
+                ['clear', [3, 4]],
+                ['partial', $this->scopes['two'], 3],
+                ['partial', $this->scopes['two'], 4],
+                ['finish_partial'],
+                ['clear', [1, 2]],
+                ['partial', $this->scopes['one'], 1],
+                ['partial', $this->scopes['one'], 2],
+                ['finish_partial'],
+                ['clear', [1, 2]],
+                ['partial', $this->scopes['two'], 1],
+                ['partial', $this->scopes['two'], 2],
+                ['finish_partial'],
+                ['clear', [1]],
+                ['partial', $this->scopes['one'], 1],
+                ['finish_partial'],
+                ['clear', [1]],
+                ['partial', $this->scopes['two'], 1],
+                ['finish_partial'],
             ],
             $this->actions
         );
@@ -194,8 +251,14 @@ class IndexerTest extends TestCase
 
         $this->assertSame(
             [
-                ['partial', $this->scopes['one'], [3, 4]],
-                ['partial', $this->scopes['two'], [3, 4]],
+                ['clear', [3, 4]],
+                ['partial', $this->scopes['one'], 3],
+                ['partial', $this->scopes['one'], 4],
+                ['finish_partial'],
+                ['clear', [3, 4]],
+                ['partial', $this->scopes['two'], 3],
+                ['partial', $this->scopes['two'], 4],
+                ['finish_partial'],
             ],
             $this->actions
         );
@@ -204,18 +267,32 @@ class IndexerTest extends TestCase
     /** @test */
     public function splitsIndexationByIdsByMaximumBatchSize()
     {
-        $this->indexer->execute([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+        $this->indexer->execute([1, 2, 3, 4, 5, 6, 7]);
 
         $this->assertSame(
             [
-                ['partial', $this->scopes['one'], [1, 2, 3]],
-                ['partial', $this->scopes['one'], [4, 5, 6]],
-                ['partial', $this->scopes['one'], [7, 8, 9]],
-                ['partial', $this->scopes['one'], [10]],
-                ['partial', $this->scopes['two'], [1, 2, 3]],
-                ['partial', $this->scopes['two'], [4, 5, 6]],
-                ['partial', $this->scopes['two'], [7, 8, 9]],
-                ['partial', $this->scopes['two'], [10]],
+                ['clear', [1, 2, 3]],
+                ['partial', $this->scopes['one'], 1],
+                ['partial', $this->scopes['one'], 2],
+                ['partial', $this->scopes['one'], 3],
+                ['clear', [4, 5, 6]],
+                ['partial', $this->scopes['one'], 4],
+                ['partial', $this->scopes['one'], 5],
+                ['partial', $this->scopes['one'], 6],
+                ['clear', [7]],
+                ['partial', $this->scopes['one'], 7],
+                ['finish_partial'],
+                ['clear', [1, 2, 3]],
+                ['partial', $this->scopes['two'], 1],
+                ['partial', $this->scopes['two'], 2],
+                ['partial', $this->scopes['two'], 3],
+                ['clear', [4, 5, 6]],
+                ['partial', $this->scopes['two'], 4],
+                ['partial', $this->scopes['two'], 5],
+                ['partial', $this->scopes['two'], 6],
+                ['clear', [7]],
+                ['partial', $this->scopes['two'], 7],
+                ['finish_partial'],
             ],
             $this->actions
         );
@@ -227,16 +304,6 @@ class IndexerTest extends TestCase
             $this->scopes['one'],
             $this->scopes['two'],
         ];
-    }
-
-    public function reindexFull(IndexScope $scope, IndexStorageWriter $writer): void
-    {
-        $this->actions[] = ['full', $scope];
-    }
-
-    public function reindexPartial(IndexScope $scope, IndexStorageWriter $writer, array $entityIds): void
-    {
-        $this->actions[] = ['partial', $scope, $entityIds];
     }
 
     public function beforeGeneration(IndexScope $scope)
@@ -251,19 +318,73 @@ class IndexerTest extends TestCase
 
     public function createPartialReindex(IndexScope $indexScope): IndexStorageWriter
     {
-        return new class implements IndexStorageWriter {
-            public function add($row): void {}
+        return new class($this->actions) implements IndexStorageWriter {
 
-            public function finish(): void {}
+            public function __construct(private array &$actions)
+            {
+
+            }
+
+            public function add($row): void
+            {
+                $this->actions[] = ['partial', $row['scope'], $row['entity_id']];
+            }
+
+            public function clear(array $entityIds): void
+            {
+                $this->actions[] = ['clear', $entityIds];
+            }
+
+            public function finish(): void
+            {
+                $this->actions[] = ['finish_partial'];
+            }
         };
     }
 
     public function createFullReindex(IndexScope $indexScope): IndexStorageWriter
     {
-        return new class implements IndexStorageWriter {
-            public function add($row): void {}
+        return new class($this->actions) implements IndexStorageWriter {
+            public function __construct(private array &$actions)
+            {
 
-            public function finish(): void {}
+            }
+
+            public function add($row): void
+            {
+                $this->actions[] = ['full', $row['scope'], $row['entity_id']];
+            }
+
+            public function clear(array $entityIds): void
+            {
+                $this->actions[] = ['clear', $entityIds];
+            }
+
+            public function finish(): void
+            {
+                $this->actions[] = ['finish_full'];
+            }
         };
+    }
+
+    public function loadByRange(IndexScope $indexScope, IndexRecordMutable $data, int $minEntityId, int $maxEntityId): void
+    {
+        foreach (range($minEntityId, $maxEntityId) as $entityId) {
+            $data->set($entityId, ['type' => 'range']);
+        }
+    }
+
+    public function loadByIds(IndexScope $indexScope, IndexRecordMutable $data, array $entityIds): void
+    {
+        foreach ($entityIds as $entityId) {
+            $data->set($entityId, ['type' => 'partial']);
+        }
+    }
+
+    public function process(IndexScope $scope, IndexRecord $record, IndexWriter $writer)
+    {
+        foreach ($record->listEntityIds() as $entityId) {
+            $writer->add(['entity_id' => $entityId, 'scope' => $scope]);
+        }
     }
 }

@@ -8,16 +8,16 @@ declare(strict_types=1);
 
 namespace MageOS\Indexer\Api;
 
-interface IndexRecordDataLoader
+interface IndexRecordLoader
 {
     /**
      * Loads data into index record by entity id range
      */
     public function loadByRange(
-        IndexScope $indexScope,
-        IndexRecordMutableData $data,
-        int $minEntityId,
-        int $maxEntityId
+        IndexScope         $indexScope,
+        IndexRecordMutable $data,
+        int                $minEntityId,
+        int                $maxEntityId
     ): void;
 
     /**
@@ -26,8 +26,8 @@ interface IndexRecordDataLoader
      * @param int[] $entityIds
      */
     public function loadByIds(
-        IndexScope $indexScope,
-        IndexRecordMutableData $data,
-        array $entityIds
+        IndexScope         $indexScope,
+        IndexRecordMutable $data,
+        array              $entityIds
     ): void;
 }

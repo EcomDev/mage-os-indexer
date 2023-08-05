@@ -10,8 +10,9 @@ namespace MageOS\Indexer\Model;
 
 use Magento\Framework\Mview\ActionInterface as MviewActionInterface;
 use Magento\Framework\Indexer\ActionInterface as IndexerActionInterface;
-use MageOS\Indexer\Api\IndexAction;
 use MageOS\Indexer\Api\IndexGenerationObserver;
+use MageOS\Indexer\Api\IndexGenerator;
+use MageOS\Indexer\Api\IndexRecordLoader;
 use MageOS\Indexer\Api\IndexScopeProvider;
 use MageOS\Indexer\Api\IndexStorageWriterFactory;
 
@@ -19,25 +20,36 @@ readonly class Indexer
     implements MviewActionInterface, IndexerActionInterface
 {
     public const DEFAULT_LIVE_INDEX_BATCH_SIZE = 1000;
+    public const DEFAULT_FULL_INDEX_BATCH_SIZE = 2000;
 
     public function __construct(
-        private IndexScopeProvider $indexScopeProvider,
-        private IndexGenerationObserver $indexGenerationObserver,
-        private IndexAction $indexAction,
+        private IndexScopeProvider        $indexScopeProvider,
+        private IndexGenerationObserver   $indexGenerationObserver,
+        private IndexGenerator            $indexGenerator,
+        private IndexRecordLoader         $indexRecordLoader,
+        private IndexRangeGenerator       $indexRangeGenerator,
         private IndexStorageWriterFactory $indexStorageWriterFactory,
-        private int $liveIndexBatchSize = self::DEFAULT_LIVE_INDEX_BATCH_SIZE
-    ) {
+        private ArrayIndexRecordFactory   $arrayIndexRecordFactory,
+        private int                       $liveIndexBatchSize = self::DEFAULT_LIVE_INDEX_BATCH_SIZE,
+        private int                       $fullIndexBatchSize = self::DEFAULT_FULL_INDEX_BATCH_SIZE
+    )
+    {
 
     }
 
     public function executeFull()
     {
+        $data = $this->arrayIndexRecordFactory->create();
+
         foreach ($this->indexScopeProvider->getScopes() as $scope) {
             $this->indexGenerationObserver->beforeGeneration($scope);
-            $this->indexAction->reindexFull(
-                $scope,
-                $this->indexStorageWriterFactory->createFullReindex($scope)
-            );
+            $writer = $this->indexStorageWriterFactory->createFullReindex($scope);
+            foreach ($this->indexRangeGenerator->ranges($this->fullIndexBatchSize) as $minEntityId => $maxEntityId) {
+                $this->indexRecordLoader->loadByRange($scope, $data, $minEntityId, $maxEntityId);
+                $this->indexGenerator->process($scope, $data, $writer);
+                $data->reset();
+            }
+            $writer->finish();
             $this->indexGenerationObserver->afterGeneration($scope);
         }
     }
@@ -64,15 +76,18 @@ readonly class Indexer
             $this->liveIndexBatchSize
         );
 
+        $data = $this->arrayIndexRecordFactory->create();
+
         foreach ($this->indexScopeProvider->getScopes() as $scope) {
             $this->indexGenerationObserver->beforeGeneration($scope);
+            $writer = $this->indexStorageWriterFactory->createPartialReindex($scope);
             foreach ($idChunks as $ids) {
-                $this->indexAction->reindexPartial(
-                    $scope,
-                    $this->indexStorageWriterFactory->createPartialReindex($scope),
-                    $ids
-                );
+                $writer->clear($ids);
+                $this->indexRecordLoader->loadByIds($scope, $data, $ids);
+                $this->indexGenerator->process($scope, $data, $writer);
+                $data->reset();
             }
+            $writer->finish();
             $this->indexGenerationObserver->afterGeneration($scope);
         }
     }

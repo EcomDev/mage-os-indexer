@@ -6,15 +6,15 @@
 
 declare(strict_types=1);
 
-namespace MageOS\Indexer\Test\Unit\Model\ResourceModel;
+namespace MageOS\Indexer\Test;
 
 use MageOS\Indexer\Model\ResourceModel\IndexTableStructure;
 
 class FakeIndexTableStructure implements IndexTableStructure
 {
-    public function generateInsertOnDuplicate(int $batchSize): string
+    public function generateInsertOnDuplicate(string $tableName, int $batchSize): string
     {
-        return 'BATCH SQL ' . $batchSize;
+        return "BATCH INSERT SQL $tableName $batchSize";
     }
 
     public function prepareRow(array &$batchParameters, array $row): void

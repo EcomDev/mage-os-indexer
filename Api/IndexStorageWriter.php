@@ -8,9 +8,17 @@ declare(strict_types=1);
 
 namespace MageOS\Indexer\Api;
 
-interface IndexStorageWriter
+interface IndexStorageWriter extends IndexWriter
 {
-    public function add($row): void;
+    /**
+     * Clear index storage by entity ids
+     *
+     * @param int[] $entityIds
+     */
+    public function clear(array $entityIds): void;
 
+    /**
+     * Finalize indexation
+     */
     public function finish(): void;
 }

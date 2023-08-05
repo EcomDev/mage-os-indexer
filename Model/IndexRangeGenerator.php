@@ -6,9 +6,9 @@
 
 declare(strict_types=1);
 
-namespace MageOS\Indexer\Model\ResourceModel;
+namespace MageOS\Indexer\Model;
 
-interface IndexerRangeGenerator
+interface IndexRangeGenerator
 {
     public function ranges(int $batchSize): iterable;
 }
